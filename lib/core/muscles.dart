@@ -6,6 +6,7 @@ const kMuscles = <String>[
   'Tríceps',
   'Quadríceps',
   'Posterior de coxa',
+  'Adutores'
   'Glúteos',
   'Panturrilha',
   'Abdômen',

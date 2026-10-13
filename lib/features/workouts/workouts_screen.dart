@@ -169,18 +169,22 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
                                           size: 16,
                                           color: kRetroHotPink,
                                         ),
-                                        Text(
-                                          '${l.exercise.name} ',
-                                          style: GoogleFonts.chakraPetch(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 13,
+                                        Expanded(
+                                          child: Text(
+                                            '${l.exercise.name} ',
+                                            style: GoogleFonts.chakraPetch(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                            ),
                                           ),
                                         ),
-                                        Text(
-                                          '(${l.exercise.muscle} · ${l.targetSets}s)',
-                                          style: GoogleFonts.chakraPetch(
-                                            fontSize: 12,
-                                            color: theme.hintColor,
+                                        Expanded(
+                                          child: Text(
+                                            '(${l.exercise.muscle} · ${l.targetSets}s)',
+                                            style: GoogleFonts.chakraPetch(
+                                              fontSize: 12,
+                                              color: theme.hintColor,
+                                            ),
                                           ),
                                         ),
                                       ],

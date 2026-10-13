@@ -4,12 +4,14 @@ import 'database.dart';
 
 class WorkoutLine {
   const WorkoutLine(this.exercise, this.targetSets);
+
   final Exercise exercise;
   final int targetSets;
 }
 
 class WorkoutFull {
   const WorkoutFull(this.workout, this.lines);
+
   final Workout workout;
   final List<WorkoutLine> lines;
 }
@@ -22,6 +24,7 @@ class SessionItem {
     required this.sets,
     required this.prev,
   });
+
   final SessionExercise se;
   final Exercise exercise;
   final Exercise? original;
@@ -33,6 +36,7 @@ class SessionItem {
 
 class SessionFull {
   const SessionFull(this.session, this.items);
+
   final Session session;
   final List<SessionItem> items;
 
@@ -40,8 +44,9 @@ class SessionFull {
 }
 
 class Repo {
-  Repo(this.db);
   final AppDatabase db;
+
+  Repo(this.db);
 
   /// Carrega uma vez e recarrega sempre que alguma das tabelas mudar.
   Stream<T> _watch<T>(
@@ -49,7 +54,8 @@ class Repo {
     Iterable<ResultSetImplementation> tables,
   ) async* {
     yield await load();
-    await for (final _ in db.tableUpdates(TableUpdateQuery.onAllTables(tables))) {
+    await for (final _
+        in db.tableUpdates(TableUpdateQuery.onAllTables(tables))) {
       yield await load();
     }
   }
@@ -66,7 +72,8 @@ class Repo {
 
   Future<Exercise> createExercise(String name, String muscle) async {
     final id = await db.into(db.exercises).insert(
-          ExercisesCompanion.insert(name: name, muscle: muscle, isCustom: const Value(true)),
+          ExercisesCompanion.insert(
+              name: name, muscle: muscle, isCustom: const Value(true)),
         );
     return (db.select(db.exercises)..where((e) => e.id.equals(id))).getSingle();
   }
@@ -122,7 +129,9 @@ class Repo {
         await (db.update(db.workouts)..where((w) => w.id.equals(id))).write(
           WorkoutsCompanion(name: Value(name), targetGroup: Value(targetGroup)),
         );
-        await (db.delete(db.workoutExercises)..where((w) => w.workoutId.equals(id))).go();
+        await (db.delete(db.workoutExercises)
+              ..where((w) => w.workoutId.equals(id)))
+            .go();
       }
       for (var i = 0; i < lines.length; i++) {
         await db.into(db.workoutExercises).insert(
@@ -144,17 +153,20 @@ class Repo {
 
   // ------------------------------------------------------------------- sessões
 
-  Future<Session?> _activeRow() =>
-      (db.select(db.sessions)..where((s) => s.finishedAt.isNull())..limit(1)).getSingleOrNull();
+  Future<Session?> _activeRow() => (db.select(db.sessions)
+        ..where((s) => s.finishedAt.isNull())
+        ..limit(1))
+      .getSingleOrNull();
 
   Future<List<SetLog>> previousSets(int exerciseId, {DateTime? before}) async {
-    Expression<bool> cond =
-        db.sessionExercises.exerciseId.equals(exerciseId) & db.sessions.finishedAt.isNotNull();
+    Expression<bool> cond = db.sessionExercises.exerciseId.equals(exerciseId) &
+        db.sessions.finishedAt.isNotNull();
     if (before != null) {
       cond = cond & db.sessions.finishedAt.isSmallerThanValue(before);
     }
     final q = db.select(db.sessionExercises).join([
-      innerJoin(db.sessions, db.sessions.id.equalsExp(db.sessionExercises.sessionId)),
+      innerJoin(
+          db.sessions, db.sessions.id.equalsExp(db.sessionExercises.sessionId)),
     ])
       ..where(cond)
       ..orderBy([
@@ -174,7 +186,9 @@ class Repo {
   }
 
   Future<SessionFull> _loadSession(Session s, {bool withPrev = true}) async {
-    final exMap = {for (final e in await db.select(db.exercises).get()) e.id: e};
+    final exMap = {
+      for (final e in await db.select(db.exercises).get()) e.id: e
+    };
     final ses = await (db.select(db.sessionExercises)
           ..where((t) => t.sessionId.equals(s.id))
           ..orderBy([(t) => OrderingTerm.asc(t.position)]))
@@ -190,7 +204,8 @@ class Repo {
       items.add(SessionItem(
         se: se,
         exercise: exMap[se.exerciseId]!,
-        original: se.originalExerciseId == null ? null : exMap[se.originalExerciseId],
+        original:
+            se.originalExerciseId == null ? null : exMap[se.originalExerciseId],
         sets: sets.where((x) => x.sessionExerciseId == se.id).toList(),
         prev: withPrev
             ? await previousSets(se.exerciseId, before: s.finishedAt)
@@ -214,7 +229,8 @@ class Repo {
         return s == null ? null : _loadSession(s);
       }, [db.sessions, db.sessionExercises, db.setLogs, db.exercises]);
 
-  Stream<List<SessionFull>> watchHistory() => _watch<List<SessionFull>>(() async {
+  Stream<List<SessionFull>> watchHistory() =>
+      _watch<List<SessionFull>>(() async {
         final list = await (db.select(db.sessions)
               ..where((s) => s.finishedAt.isNotNull())
               ..orderBy([(s) => OrderingTerm.desc(s.finishedAt)]))
@@ -223,7 +239,8 @@ class Repo {
       }, [db.sessions, db.sessionExercises, db.setLogs, db.exercises]);
 
   Future<SessionFull> loadSession(int id) async {
-    final s = await (db.select(db.sessions)..where((t) => t.id.equals(id))).getSingle();
+    final s = await (db.select(db.sessions)..where((t) => t.id.equals(id)))
+        .getSingle();
     return _loadSession(s);
   }
 
@@ -233,7 +250,9 @@ class Repo {
       if (await _activeRow() != null) {
         throw StateError('Já existe um treino em andamento.');
       }
-      final w = await (db.select(db.workouts)..where((t) => t.id.equals(workoutId))).getSingle();
+      final w = await (db.select(db.workouts)
+            ..where((t) => t.id.equals(workoutId)))
+          .getSingle();
       final lines = await (db.select(db.workoutExercises)
             ..where((t) => t.workoutId.equals(workoutId))
             ..orderBy([(t) => OrderingTerm.asc(t.position)]))
@@ -266,18 +285,26 @@ class Repo {
 
   Future<void> cancelSession(int id) {
     return db.transaction(() async {
-      final ses = await (db.select(db.sessionExercises)..where((t) => t.sessionId.equals(id))).get();
+      final ses = await (db.select(db.sessionExercises)
+            ..where((t) => t.sessionId.equals(id)))
+          .get();
       final ids = ses.map((e) => e.id).toList();
-      await (db.delete(db.setLogs)..where((t) => t.sessionExerciseId.isIn(ids))).go();
-      await (db.delete(db.sessionExercises)..where((t) => t.sessionId.equals(id))).go();
+      await (db.delete(db.setLogs)..where((t) => t.sessionExerciseId.isIn(ids)))
+          .go();
+      await (db.delete(db.sessionExercises)
+            ..where((t) => t.sessionId.equals(id)))
+          .go();
       await (db.delete(db.sessions)..where((t) => t.id.equals(id))).go();
     });
   }
 
-  Future<void> addSessionExercise(int sessionId, int exerciseId, {int targetSets = 3}) async {
-    final rows =
-        await (db.select(db.sessionExercises)..where((t) => t.sessionId.equals(sessionId))).get();
-    final pos = rows.fold<int>(-1, (a, r) => r.position > a ? r.position : a) + 1;
+  Future<void> addSessionExercise(int sessionId, int exerciseId,
+      {int targetSets = 3}) async {
+    final rows = await (db.select(db.sessionExercises)
+          ..where((t) => t.sessionId.equals(sessionId)))
+        .get();
+    final pos =
+        rows.fold<int>(-1, (a, r) => r.position > a ? r.position : a) + 1;
     await db.into(db.sessionExercises).insert(
           SessionExercisesCompanion.insert(
             sessionId: sessionId,
@@ -290,8 +317,11 @@ class Repo {
 
   Future<void> removeSessionExercise(int id) {
     return db.transaction(() async {
-      await (db.delete(db.setLogs)..where((t) => t.sessionExerciseId.equals(id))).go();
-      await (db.delete(db.sessionExercises)..where((t) => t.id.equals(id))).go();
+      await (db.delete(db.setLogs)
+            ..where((t) => t.sessionExerciseId.equals(id)))
+          .go();
+      await (db.delete(db.sessionExercises)..where((t) => t.id.equals(id)))
+          .go();
     });
   }
 
@@ -300,8 +330,11 @@ class Repo {
   Future<void> replaceSessionExercise(SessionExercise se, int newExerciseId) {
     return db.transaction(() async {
       final orig = se.originalExerciseId ?? se.exerciseId;
-      await (db.delete(db.setLogs)..where((t) => t.sessionExerciseId.equals(se.id))).go();
-      await (db.update(db.sessionExercises)..where((t) => t.id.equals(se.id))).write(
+      await (db.delete(db.setLogs)
+            ..where((t) => t.sessionExerciseId.equals(se.id)))
+          .go();
+      await (db.update(db.sessionExercises)..where((t) => t.id.equals(se.id)))
+          .write(
         SessionExercisesCompanion(
           exerciseId: Value(newExerciseId),
           originalExerciseId: Value(newExerciseId == orig ? null : orig),
@@ -311,7 +344,8 @@ class Repo {
   }
 
   Future<void> setTargetSets(int sessionExerciseId, int n) =>
-      (db.update(db.sessionExercises)..where((t) => t.id.equals(sessionExerciseId)))
+      (db.update(db.sessionExercises)
+            ..where((t) => t.id.equals(sessionExerciseId)))
           .write(SessionExercisesCompanion(targetSets: Value(n < 1 ? 1 : n)));
 
   Future<void> addSet(int sessionExerciseId, double weightKg, int reps) async {
@@ -330,8 +364,8 @@ class Repo {
   }
 
   Future<void> updateSet(int id, double weightKg, int reps) =>
-      (db.update(db.setLogs)..where((t) => t.id.equals(id)))
-          .write(SetLogsCompanion(weightKg: Value(weightKg), reps: Value(reps)));
+      (db.update(db.setLogs)..where((t) => t.id.equals(id))).write(
+          SetLogsCompanion(weightKg: Value(weightKg), reps: Value(reps)));
 
   /// Remove a série e renumera as seguintes.
   Future<void> deleteSet(SetLog set) {

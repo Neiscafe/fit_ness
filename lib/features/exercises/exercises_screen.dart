@@ -16,8 +16,14 @@ class ExercisesScreen extends ConsumerStatefulWidget {
 }
 
 class _ExercisesScreenState extends ConsumerState<ExercisesScreen> {
-  final _search = TextEditingController();
+  late final _search;
   String _q = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _search = TextEditingController();
+  }
 
   @override
   void dispose() {
@@ -26,7 +32,7 @@ class _ExercisesScreenState extends ConsumerState<ExercisesScreen> {
   }
 
   Future<void> _create() async {
-    final nameCtrl = TextEditingController(text: _search.text.trim());
+    var name =  _search.text.trim();
     var muscle = kMuscles.first;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -42,7 +48,7 @@ class _ExercisesScreenState extends ConsumerState<ExercisesScreen> {
         ),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
           TextField(
-            controller: nameCtrl,
+            onChanged: (value) => name = value.trim(),
             autofocus: true,
             textCapitalization: TextCapitalization.sentences,
             decoration: const InputDecoration(
@@ -64,19 +70,21 @@ class _ExercisesScreenState extends ConsumerState<ExercisesScreen> {
         ]),
         actions: [
           OutlinedButton(
-            onPressed: () => Navigator.pop(ctx, false),
+            onPressed: () {
+              Navigator.pop(ctx);
+            },
             child: const Text('CANCELAR'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
+            onPressed: () {
+              Navigator.pop(ctx, true);
+            },
             child: const Text('CRIAR'),
           ),
         ],
       ),
     );
-    final name = nameCtrl.text.trim();
-    nameCtrl.dispose();
-    if (ok != true || name.isEmpty) return;
+    if (ok!=true  || name.isEmpty) return;
     final ex = await ref.read(repoProvider).createExercise(name, muscle);
     if (mounted) Navigator.pop(context, ex);
   }
@@ -92,7 +100,8 @@ class _ExercisesScreenState extends ConsumerState<ExercisesScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _create,
         icon: const Icon(Icons.add_rounded),
-        label: Text('NOVO EXERCÍCIO', style: GoogleFonts.orbitron(fontWeight: FontWeight.bold)),
+        label: Text('NOVO EXERCÍCIO',
+            style: GoogleFonts.orbitron(fontWeight: FontWeight.bold)),
       ),
       body: Column(children: [
         Padding(
@@ -102,7 +111,8 @@ class _ExercisesScreenState extends ConsumerState<ExercisesScreen> {
             onChanged: (v) => setState(() => _q = norm(v)),
             decoration: InputDecoration(
               hintText: 'Buscar por nome ou grupo muscular...',
-              prefixIcon: Icon(Icons.search, color: isDark ? kRetroNeonCyan : kRetroHotPink),
+              prefixIcon: Icon(Icons.search,
+                  color: isDark ? kRetroNeonCyan : kRetroHotPink),
               suffixIcon: _q.isEmpty
                   ? null
                   : IconButton(
@@ -117,12 +127,15 @@ class _ExercisesScreenState extends ConsumerState<ExercisesScreen> {
         ),
         Expanded(
           child: async.when(
-            loading: () => const Center(child: CircularProgressIndicator(color: kRetroHotPink)),
+            loading: () => const Center(
+                child: CircularProgressIndicator(color: kRetroHotPink)),
             error: (e, _) => Center(child: Text('Erro: $e')),
             data: (all) {
               final list = all
                   .where((e) =>
-                      _q.isEmpty || norm(e.name).contains(_q) || norm(e.muscle).contains(_q))
+                      _q.isEmpty ||
+                      norm(e.name).contains(_q) ||
+                      norm(e.muscle).contains(_q))
                   .toList();
               if (list.isEmpty) {
                 return Center(
@@ -156,9 +169,12 @@ class _ExercisesScreenState extends ConsumerState<ExercisesScreen> {
                         children: [
                           Container(
                             margin: const EdgeInsets.only(top: 4),
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF2E134E) : const Color(0xFFF3E4F8),
+                              color: isDark
+                                  ? const Color(0xFF2E134E)
+                                  : const Color(0xFFF3E4F8),
                               borderRadius: BorderRadius.circular(4),
                               border: Border.all(
                                 color: isDark ? kRetroNeonCyan : kRetroHotPink,
